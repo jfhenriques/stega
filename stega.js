@@ -20,16 +20,17 @@ app.configure(function() {
 });
 
 
+var inc = 0;
 
 /***************************************************************************************************/
-app.get('/enc', function (req, res) {
-
+app.get('/enc.png', function (req, res) {
+console.log(inc++);
 	(new Stega('in.png'))
 
 		.on('error', function(code, msg) {
 			console.error("[" + code + "] Error ocurred: " + msg);
 
-			template.json( req, res, { error: msg, errorCode: code}, 404 );
+			template.json( req, res, { error: msg, errorCode: code}, 400 );
 		})
 
 		.on('parsed', function() {
@@ -38,11 +39,16 @@ app.get('/enc', function (req, res) {
 			console.log("Total pixels: " + this.totalPixels);
 			console.log("Available Space: " + this.available);
 
-			res.set('Content-Type', 'image/png');
+			res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0');
+			res.setHeader('Pragma', 'no-cache');
 
-			this.encode(new Buffer('0123', 'utf-8'), '123456', 'out.png', function() {
-				
-				res.end();
+			this.encode(new Buffer('0123', 'utf-8'), '123456', function(code, out) {
+
+				if( code !== Stega.STATE.OK )
+					template.json( req, res, { error: out, errorCode: code}, 400 );
+
+				else
+					template.png( req, res, out, 200);
 			});
 		});
 });
@@ -77,10 +83,6 @@ if (args.length > 0)
 
 console.log('Listening to port: ' + port)
 app.listen(port);
-
-
-
-
 
 
 

@@ -1,6 +1,7 @@
 
 module.exports = {
 	json: json,
+	png: png,
 	redirect: redirect,
 	html: {
 
@@ -22,6 +23,18 @@ function json(req, res, out, statusCode) {
 					 'Content-Length': size} );
 
 	res.write( out );
+	res.end();
+}
+
+function png(req, res, buff, statusCode) {
+
+	var size;
+
+	res.writeHead( statusCode,
+				   { 'Content-Type': 'image/png',
+					 'Content-Length': buff.length} );
+
+	res.write( buff );
 	res.end();
 }
 
