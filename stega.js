@@ -1,45 +1,89 @@
-// var fs = require('fs'),
-//     PNG = require('pngjs').PNG;
-
-// fs.createReadStream('in.png')
-//     .pipe(new PNG({
-//         filterType: 1,
-//         deflateStrategy: 1,
-//         deflateLevel: 9
-
-//     }))
-//     .on('parsed', function() {
-
-//         for (var y = 0; y < this.height; y++) {
-//             for (var x = 0; x < this.width; x++) {
-//                 var idx = (this.width * y + x) << 2;
-
-//                 // invert color
-//                 this.data[idx] = 255 - this.data[idx];
-//                 this.data[idx+1] = 255 - this.data[idx+1];
-//                 this.data[idx+2] = 255 - this.data[idx+2];
-
-//                 // and reduce opacity
-//                 this.data[idx+3] = 255; //this.data[idx+3] >> 1;
-//             }
-//         }
-
-//         this.pack().pipe(fs.createWriteStream('out.png'));
-//     });
 
 
-var crypto = require('crypto'),
-    secret = crypto.createHash('sha256').update('Secret password XPTO').digest('binary'),
-    iv = crypto.randomBytes(16),
-    cipher = crypto.createCipheriv("AES-256-CBC", secret, iv),
-    decipher = crypto.createDecipheriv("AES-256-CBC", secret, iv),
-    enc = '0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789'; //crypto.randomBytes(32);
+var express = require('express'),
+	app = express(),
+	Stega = require('./StegaCrypt');
+	template = require('./template'),
+	port = 8080;	// Porta por defeito
 
- cipher.setAutoPadding(true);
+app.configure(function() {
 
-var step  = cipher.update(enc, 'utf-8', 'binary') + cipher.final('binary');
+	app.use(function (req, res, next) {
+	    res.setHeader('Server', 'StegaCrypt-1-0');
 
-var end  = decipher.update(step, 'binary', 'utf-8') + decipher.final('utf-8');
+	    return next();
+	});
 
-console.log((new Buffer(step, 'binary')).toString('hex'));
-console.log(end);
+	app.enable('trust proxy');
+	app.disable('x-powered-by');
+	app.use('/', app.router);
+});
+
+
+
+/***************************************************************************************************/
+app.get('/enc', function (req, res) {
+
+	(new Stega('in.png'))
+
+		.on('error', function(code, msg) {
+			console.error("[" + code + "] Error ocurred: " + msg);
+
+			template.json( req, res, { error: msg, errorCode: code}, 404 );
+		})
+
+		.on('parsed', function() {
+
+			console.log("Input image readed");
+			console.log("Total pixels: " + this.totalPixels);
+			console.log("Available Space: " + this.available);
+
+			res.set('Content-Type', 'image/png');
+
+			this.encode(new Buffer('0123', 'utf-8'), '123456', 'out.png', function() {
+				
+				res.end();
+			});
+		});
+});
+
+/***************************************************************************************************/
+
+// Qualquer outra rota não encontrada
+app.all('*', function (req, res) {
+
+	console.log('Wrong request received: ' + req.path + " [" + req.method + "]");
+
+	template.json( req, res, { error: 'Page not found'}, 404 );
+});
+
+
+
+/*****************************************************************************
+ *	 Coloca a aplicação em mode de escuta na porta especificada
+ *****************************************************************************/
+
+var args = process.argv.splice(2),
+	p = null;
+
+if (args.length > 0)
+{
+	p = parseInt(args[0]);
+	if( p )
+		port = p ;
+
+	p = null;
+}
+
+console.log('Listening to port: ' + port)
+app.listen(port);
+
+
+
+
+
+
+
+//a.encode('in.png', 'tmp.png', new Buffer('01234012340123401234012340123401234çãp', 'utf-8'), '123456');
+
+//console.log(Math.ceil(0.1));
