@@ -14,43 +14,56 @@ app.configure(function() {
 	    return next();
 	});
 
+	app.use(express.bodyParser());
+
 	app.enable('trust proxy');
 	app.disable('x-powered-by');
 	app.use('/', app.router);
 });
 
 
-var inc = 0;
-
+var debugCounter = 0;
 /***************************************************************************************************/
-app.get('/enc.png', function (req, res) {
-console.log(inc++);
-	(new Stega('in.png'))
+app.post('/enc', function (req, res) {
 
-		.on('error', function(code, msg) {
-			console.error("[" + code + "] Error ocurred: " + msg);
+	console.log("* Debug counter: " + (debugCounter++) );
 
-			template.json( req, res, { error: msg, errorCode: code}, 400 );
-		})
+	var cont = req.body.cont,
+		pass = req.body.pass;
 
-		.on('parsed', function() {
+	if(    !cont
+		|| !pass )
+		template.json( req, res, { error: 'Content or password not sent'}, 400 );
 
-			console.log("Input image readed");
-			console.log("Total pixels: " + this.totalPixels);
-			console.log("Available Space: " + this.available);
+	else
+	{
+		(new Stega('in.png'))
 
-			res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0');
-			res.setHeader('Pragma', 'no-cache');
+			.on('error', function(code, msg) {
+				console.error("[" + code + "] Error ocurred: " + msg);
 
-			this.encode(new Buffer('0123', 'utf-8'), '123456', function(code, out) {
+				template.json( req, res, { error: msg, errorCode: code}, 400 );
+			})
 
-				if( code !== Stega.STATE.OK )
-					template.json( req, res, { error: out, errorCode: code}, 400 );
+			.on('parsed', function() {
 
-				else
-					template.png( req, res, out, 200);
+				console.log("Input image readed");
+				console.log("Total pixels: " + this.totalPixels);
+				console.log("Available Space: " + this.available);
+
+				this.encode(new Buffer(cont, 'utf-8'),  pass, function(code, out) {
+
+					res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0');
+					res.setHeader('Pragma', 'no-cache');
+
+					if( code !== Stega.STATE.OK )
+						template.json( req, res, { error: out, errorCode: code}, 400 );
+
+					else
+						template.png( req, res, out, 200);
+				});
 			});
-		});
+	}
 });
 
 /***************************************************************************************************/
