@@ -76,6 +76,44 @@ app.post('/enc', function (req, res) {
 	}
 });
 
+app.post('/dec', function (req, res) {
+
+	console.log("* Debug counter: " + (debugCounter++) );
+
+	var pass = req.body.pass;
+
+	if( !pass )
+		template.json( req, res, { error: 'Content or password not sent'}, 400 );
+
+	else
+	{
+
+		(new Stega('out.png'))
+
+			.on('error', function(code, msg) {
+				console.error("[" + code + "] Error ocurred: " + msg);
+
+				template.json( req, res, { error: msg, errorCode: code}, 400 );
+			})
+
+			.on('done', function(out) {
+				
+				template.json( req, res, { dec: out.toString()}, 200 );
+				//template.png( req, res, out, 200 );
+			})
+
+
+			.on('parsed', function() {
+
+				res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0');
+				res.setHeader('Pragma', 'no-cache');
+
+
+				this.decode(pass, 'out.png');
+			});
+	}
+});
+
 /***************************************************************************************************/
 
 // Qualquer outra rota não encontrada

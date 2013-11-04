@@ -17,23 +17,6 @@ var fs = require('fs'),
 
 
 
-// var 
-//     secret = crypto.createHash(HASH).update('Secret password XPTO').digest('binary'),
-//     iv = crypto.randomBytes(IV_LEN),
-//     cipher = crypto.createCipheriv("", secret, iv),
-//     decipher = crypto.createDecipheriv("AES-256-CBC", secret, iv),
-//     enc = '0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789'; //crypto.randomBytes(32);
-
-//  cipher.setAutoPadding(true);
-
-// var step  = ;
-
-// var end  = decipher.update(step, 'binary', 'utf-8') + decipher.final('utf-8');
-
-// console.log((new Buffer(step, 'binary')).toString('hex'));
-// console.log(end);
-
-
 /**********************************************************************************************************/
 
 function createHelperArray(startSeed, totalPixels)
@@ -41,7 +24,7 @@ function createHelperArray(startSeed, totalPixels)
 	var i,j,temp,
 		arr = [],
 		size,
-		rand = seed(startSeed),
+		rand = seed(startSeed.toString('hex')),
 		totalBits = (totalPixels * 4);
 
 	for(i = HEADER_REAL_BIT_LEN; i < totalBits ; i++)
@@ -120,6 +103,8 @@ StegaCrypt.STATE = {
 	NOT_COMPATIBLE 	 : 2,
 	WRONG_PARAMETERS : 3,
 	NOT_ENOUGHT_BYTES: 4,
+	BAD_DECRYPT		 : 5,
+	WRONG_SIZE		 : 6,
 };
 
 
@@ -165,6 +150,16 @@ StegaCrypt.prototype.pixelator = function(posArr)
 		pixelPtr++;
 
 		return out;
+	}
+
+
+	var setPtr = function(pixel, bit)
+	{
+		if( pixel !== undefined )
+			pixelPtr = pixel;
+
+		if( bit !== undefined )
+			pixelBit = bit;
 	}
 
 
@@ -219,10 +214,83 @@ StegaCrypt.prototype.pixelator = function(posArr)
 		}
 	}
 
+	var read = function(buff, length)
+	{
+		var byteShift = 8,
+			nByte = -1,
+			curBitPos,
+			bitMask,
+			bitMaskCheck;
+
+		function _setMasks()
+		{
+			bitMaskCheck = (0x1 << pixelBit);
+		}
+		_setMasks();
+
+		for ( ;; )
+		{
+			// Get current byte from buffer
+			if( byteShift < 7 ) byteShift++;
+			else
+			{
+				if( (++nByte) >= length ) break;
+
+				byteShift = 0;
+			}
+
+			curBitPos = _nextPos(_setMasks);
+			bitMask = (0x1 << byteShift);
+
+			if( self.png.data[ curBitPos ] & bitMaskCheck )
+				buff[nByte] |= bitMask;
+
+			else
+				buff[nByte] &= ~bitMask;
+
+			//console.log("Byte[nr: " + nByte + "|code: " + cByte + "] = [b:  " + byteShift + "|pos: " + curBitPos+ "|p: " + pixelBit  + "]");
+		}
+	}
+
+
 
 	reset();
 
-	return { reset: reset, write: write };
+	return { reset: reset, write: write, read: read, setPtr: setPtr };
+}
+
+
+
+StegaCrypt.prototype._savePngOutput = function(outputTo)
+{
+	if( outputTo == undefined )
+		outputTo = [];
+
+	if( typeof outputTo == 'string' )
+	{
+		this.png.pack().pipe( fs.createWriteStream(outputTo) );
+
+		this.emit('done');
+	}
+	else
+	{
+		var isBufferOutput = (outputTo instanceof Array) ;
+		
+		this.png.on('data', function(data) {
+
+			if( isBufferOutput )
+				outputTo.push(data);
+			else
+				outputTo.write(data);
+		});
+
+		this.png.on('end', function() {
+
+			this.emit('done', isBufferOutput ? Buffer.concat(outputTo) : undefined );
+		}.bind(this));
+		
+		this.png.pack();
+	}
 }
 
 StegaCrypt.prototype.encode = function(input, pass, output)
@@ -237,15 +305,13 @@ StegaCrypt.prototype.encode = function(input, pass, output)
 
 	else
 	{
-		var self = this;
-
 		process.nextTick(function() {
 
 			var inp    = (input instanceof Buffer) ? input : new Buffer(input, 'utf-8'),
 				needed = StegaCrypt.calculateNeeded( inp.length );
 
-			if( needed > self.available )
-				self.emit('error', StegaCrypt.STATE.NOT_ENOUGHT_BYTES, 'Not enought space available');
+			if( needed > this.available )
+				this.emit('error', StegaCrypt.STATE.NOT_ENOUGHT_BYTES, 'Not enought space available');
 
 			else
 			{
@@ -256,59 +322,95 @@ StegaCrypt.prototype.encode = function(input, pass, output)
 					enc = Buffer.concat([cipher.update(inp), cipher.final()]),
 
 					lenBuff = new Buffer(4),
-					ctrlBuff = new Buffer(1),
-					posArr = createHelperArray(iv, self.totalPixels),
-					pixel = self.pixelator();
-
+					ctrlByte = new Buffer(1),
+					posArr = createHelperArray(iv, this.totalPixels),
+					pixel = this.pixelator();
 
 				lenBuff.writeUInt32LE(enc.length, 0);
-				ctrlBuff.writeUInt8(0x0, 0);
+				ctrlByte.writeUInt8(this.bits, 0);
 
 				// Write IV and control bit
-				pixel.write(iv, true);
-				pixel.write(ctrlBuff, true);
+				pixel.write(iv);
+				pixel.write(ctrlByte);
 
-				// Reset pixelator to use position Array
+				// Reset pixelator to use a position Array
 				pixel.reset(posArr);
 
-				// Write size of encrypted data, and encrypted data
+				// Write the size of encrypted data, and the encrypted data
 				pixel.write(lenBuff);
 				pixel.write(enc);
 
+				this._savePngOutput(output);
+			}
 
-				if( output == undefined )
-					output = [];
+		}.bind(this));
+	}
+}
 
-				if( typeof output == 'string' )
-				{
-					self.png.pack().pipe( fs.createWriteStream(output) );
 
-					self.emit('done');
-				}
-				else
-				{
-					var isBufferOutput = (output instanceof Array) ;
-					
-					self.png.on('data', function(data) {
 
-						if( isBufferOutput )
-							output.push(data);
-						else
-							output.write(data);
-					});
+StegaCrypt.prototype.decode = function(pass, output)
+{
+	if( !this.parsed )
+		this.emit('error', StegaCrypt.STATE.NOT_PARSED, 'Image not parsed');
 
-					self.png.on('end', function() {
+	else
+	if( pass   == undefined )
+		this.emit('error', StegaCrypt.STATE.WRONG_PARAMETERS, 'Wrong input parameters');
 
-						self.emit('done', isBufferOutput ? Buffer.concat(output) : undefined );
-					});
-					
-					self.png.pack();
+	else
+	{
+		process.nextTick(function() {
+
+			var passHash = crypto.createHmac(HASH_ALGO, HMAC_KEY).update(pass).digest('binary'),
+				pixel = this.pixelator(),
+				ivBuff = new Buffer(IV_LEN),
+				ctrlByte = new Buffer(1),
+				lenBuff = new Buffer(4),
+				posArr,
+				encBuff,
+				decipher, dec;
+
+			pixel.read(ivBuff, ivBuff.length);
+			pixel.read(ctrlByte, ctrlByte.length);
+
+			posArr = createHelperArray(ivBuff, this.totalPixels),
+
+			pixel.reset(posArr);
+			
+			pixel.read(lenBuff, lenBuff.length);
+
+			lenBuff = lenBuff.readUInt32LE(0);
+			this.bits = ctrlByte.readUInt8(0);
+
+			if( this.bits > 1 || this.bits <= 4 )
+				this.available = this.calculateAvailable(this.totalPixels);
+
+			if( lenBuff > this.available )
+				this.emit('error', StegaCrypt.STATE.WRONG_SIZE, 'Bad size. Maybe the image has no data hidden');
+
+			else
+			{
+				encBuff = new Buffer(lenBuff);
+
+				pixel.read(encBuff, encBuff.length);
+
+				try {
+
+					decipher = crypto.createDecipheriv(CYPHER_ALGO, passHash, ivBuff);
+					dec = Buffer.concat([decipher.update(encBuff), decipher.final()]),
+
+					this.emit('done', dec);
+
+				} catch(err) {
+					this.emit('error', StegaCrypt.STATE.BAD_DECRYPT, 'Bad Password, or image as no data hidden');
 				}
 			}
 
-		});
+		}.bind(this));
 	}
 }
+
 
 
 
