@@ -2,7 +2,7 @@
 
 var express = require('express'),
 	app = express(),
-	Stega = require('./StegaCrypt');
+	Stega = require('./StegaCrypt'),
 	template = require('./template'),
 	port = 8080;	// Porta por defeito
 
@@ -29,7 +29,8 @@ app.post('/enc', function (req, res) {
 	console.log("* Debug counter: " + (debugCounter++) );
 
 	var cont = req.body.cont,
-		pass = req.body.pass;
+		pass = req.body.pass,
+		bits = req.body.bits;
 
 	if(    !cont
 		|| !pass )
@@ -37,7 +38,10 @@ app.post('/enc', function (req, res) {
 
 	else
 	{
-		(new Stega('in.png'))
+		if( bits )
+			bits = parseInt( bits );
+
+		(new Stega('in.png', bits))
 
 			.on('error', function(code, msg) {
 				console.error("[" + code + "] Error ocurred: " + msg);
@@ -45,23 +49,29 @@ app.post('/enc', function (req, res) {
 				template.json( req, res, { error: msg, errorCode: code}, 400 );
 			})
 
+			.on('done', function(out) {
+				
+				template.json( req, res, { ok:0}, 200 );
+				//template.png( req, res, out, 200 );
+			})
+
+
 			.on('parsed', function() {
+
+				var buff = new Buffer(cont, 'utf-8');
+
+				res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0');
+				res.setHeader('Pragma', 'no-cache');
+
+				res.setHeader("SpaceAvailable", this.available);
+				res.setHeader("SpaceNeeded", Stega.calculateNeeded(buff.length) );
 
 				console.log("Input image readed");
 				console.log("Total pixels: " + this.totalPixels);
 				console.log("Available Space: " + this.available);
+				console.log("Raw lenght: " + buff.length);
 
-				this.encode(new Buffer(cont, 'utf-8'),  pass, function(code, out) {
-
-					res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0');
-					res.setHeader('Pragma', 'no-cache');
-
-					if( code !== Stega.STATE.OK )
-						template.json( req, res, { error: out, errorCode: code}, 400 );
-
-					else
-						template.png( req, res, out, 200);
-				});
+				this.encode(buff, pass, 'out.png');
 			});
 	}
 });
@@ -96,9 +106,3 @@ if (args.length > 0)
 
 console.log('Listening to port: ' + port)
 app.listen(port);
-
-
-
-//a.encode('in.png', 'tmp.png', new Buffer('01234012340123401234012340123401234çãp', 'utf-8'), '123456');
-
-//console.log(Math.ceil(0.1));
