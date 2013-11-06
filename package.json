@@ -1,7 +1,7 @@
 {
   "name": "ssin_stega",
-  "version": "0.0.0",
-  "description": "ERROR: No README data found!",
+  "version": "0.1.0",
+  "description": "Steganography made pretty",
   "main": "stega.js",
   "dependencies": {
     "pngjs": "~0.4.0",
@@ -13,10 +13,10 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
+  "author": "João Henriques e Diogo Basto",
   "license": "BSD-2-Clause",
   "repository": {
     "type": "git",
-    "url": "http://git"
+    "url": "ssh://git@git.algumavez.com:2222/ssin/stega.git"
   }
 }
