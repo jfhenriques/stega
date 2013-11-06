@@ -12,9 +12,17 @@ app.configure(function() {
 	
 
 	app.use(function (req, res, next) {
-	    res.setHeader('Server', 'StegaCrypt-1-0');
+		res.setHeader('Server', 'StegaCrypt-1-0');
 
-	    return next();
+		if( req.headers.origin )
+		{
+			res.header('Access-Control-Allow-Origin',      req.headers.origin);
+			res.header('Access-Control-Allow-Methods',     'GET, POST');
+			res.header('Access-Control-Allow-Headers',     'X-Requested-With, Content-Type, Accept');
+			//res.header('Access-Control-Allow-Credentials', true);
+		}
+		
+		return next();
 	});
 
 	//app.use(express.limit('3mb'));
@@ -46,6 +54,7 @@ app.post('/enc', multipart, function (req, res) {
 	var cont = req.param.cont || req.body.cont,
 		pass = req.param.pass || req.body.pass,
 		bits = req.param.bits || req.body.bits,
+		json = parseInt( req.param.json || req.body.json ),
 		pngIn = req.files.png,
 		inType = ( pngIn && pngIn.type ) || false ;
 
@@ -79,7 +88,10 @@ app.post('/enc', multipart, function (req, res) {
 			.on('done', function(out) {
 				
 				//template.json( req, res, { ok:0}, 200 );
-				template.png( req, res, out, 200 );
+				if( json )
+					template.json( req, res, { img: out.toString('base64') }, 200 );
+				else
+					template.png( req, res, out, 200 );
 			})
 
 
