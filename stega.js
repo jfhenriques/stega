@@ -4,9 +4,12 @@ var express = require('express'),
 	app = express(),
 	Stega = require('./StegaCrypt'),
 	template = require('./template'),
+	multipart = require('./multipartStream'),
 	port = 8080;	// Porta por defeito
 
 app.configure(function() {
+
+	
 
 	app.use(function (req, res, next) {
 	    res.setHeader('Server', 'StegaCrypt-1-0');
@@ -14,34 +17,51 @@ app.configure(function() {
 	    return next();
 	});
 
-	app.use(express.bodyParser());
+	//app.use(express.limit('3mb'));
+
+	app.use(express.json());
+	app.use(express.urlencoded());
+	//app.use(express.multipart({defer: true, limit: '2mb'}));
 
 	app.enable('trust proxy');
 	app.disable('x-powered-by');
+
 	app.use('/', app.router);
 });
 
 
+
 var debugCounter = 0;
 /***************************************************************************************************/
-app.post('/enc', function (req, res) {
+app.post('/enc', multipart, function (req, res) {
 
-	console.log("* Debug counter: " + (debugCounter++) );
+	//console.log("* Debug counter: " + (debugCounter++) );
 
-	var cont = req.body.cont,
-		pass = req.body.pass,
-		bits = req.body.bits;
+	var cont = req.param.cont || req.body.cont,
+		pass = req.param.pass || req.body.pass,
+		bits = req.param.bits || req.body.bits,
+		pngIn = req.files.png;
 
+
+	if( req.multipartError )
+		template.json( req, res, { error: 'Max file size  may be exceeded'}, 400 );
+
+	else
 	if(    !cont
 		|| !pass )
 		template.json( req, res, { error: 'Content or password not sent'}, 400 );
+
+	else
+	if(    !pngIn
+		|| pngIn.type !== 'image/png' )
+		template.json( req, res, { error: 'Png not uploaded or wrong type'}, 400 );
 
 	else
 	{
 		if( bits )
 			bits = parseInt( bits );
 
-		(new Stega('in.png', bits))
+		(new Stega(pngIn.buffer, bits))
 
 			.on('error', function(code, msg) {
 				console.error("[" + code + "] Error ocurred: " + msg);

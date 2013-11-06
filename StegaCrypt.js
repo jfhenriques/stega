@@ -73,9 +73,7 @@ var StegaCrypt = module.exports = function(fileIn, bits)
 						deflateLevel: 9
 					});
 
-			var src = fs.createReadStream(fileIn);
-
-			self.png.on('error', function() {
+			self.png.on('error', function(err) {
 
 				self.emit('error', StegaCrypt.STATE.NOT_COMPATIBLE, 'Image not supported');
 			});
@@ -89,6 +87,8 @@ var StegaCrypt = module.exports = function(fileIn, bits)
 				self.emit('parsed');
 			});
 
+			var src = ( typeof fileIn == 'string' ) ? fs.createReadStream(fileIn) : fileIn ;
+			
 			src.pipe(self.png);
 		}
 	});
