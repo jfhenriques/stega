@@ -2,7 +2,7 @@
 
 var multiparty = require('multiparty'),
 	BufferList = require('bl'),
-	maxGlobalSize = 1 * 1024 * 1024;
+	maxGlobalSize = 3 * 1024 * 1024;
 
 function onData(name, val, data)
 {
@@ -43,7 +43,6 @@ module.exports = function(req, res, next)
 	{
 
 		req.on('newListener', function handler(event) {
-			console.log(event);
 
 			//if (event !== 'data') return;
 

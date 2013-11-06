@@ -29,6 +29,12 @@ app.configure(function() {
 	app.use('/', app.router);
 });
 
+const MSG = {
+	MAX_FILE_SIZE: 'Max file size may be exceeded',
+	CONTENT_NOT_SENT: 'Content or password not sent',
+	WRONG_IMG_TYPE: 'PNG not uploaded or wrong file type'
+
+};
 
 
 var debugCounter = 0;
@@ -40,21 +46,22 @@ app.post('/enc', multipart, function (req, res) {
 	var cont = req.param.cont || req.body.cont,
 		pass = req.param.pass || req.body.pass,
 		bits = req.param.bits || req.body.bits,
-		pngIn = req.files.png;
+		pngIn = req.files.png,
+		inType = ( pngIn && pngIn.type ) || false ;
 
 
 	if( req.multipartError )
-		template.json( req, res, { error: 'Max file size  may be exceeded'}, 400 );
+		template.json( req, res, { error: MSG.MAX_FILE_SIZE }, 400 );
 
 	else
 	if(    !cont
 		|| !pass )
-		template.json( req, res, { error: 'Content or password not sent'}, 400 );
+		template.json( req, res, { error: MSG.CONTENT_NOT_SENT }, 400 );
 
 	else
 	if(    !pngIn
-		|| pngIn.type !== 'image/png' )
-		template.json( req, res, { error: 'Png not uploaded or wrong type'}, 400 );
+		|| inType !== 'image/png' )
+		template.json( req, res, { error: MSG.WRONG_IMG_TYPE, type: inType }, 400 );
 
 	else
 	{
@@ -71,8 +78,8 @@ app.post('/enc', multipart, function (req, res) {
 
 			.on('done', function(out) {
 				
-				template.json( req, res, { ok:0}, 200 );
-				//template.png( req, res, out, 200 );
+				//template.json( req, res, { ok:0}, 200 );
+				template.png( req, res, out, 200 );
 			})
 
 
@@ -83,15 +90,56 @@ app.post('/enc', multipart, function (req, res) {
 				res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0');
 				res.setHeader('Pragma', 'no-cache');
 
-				res.setHeader("SpaceAvailable", this.available);
-				res.setHeader("SpaceNeeded", Stega.calculateNeeded(buff.length) );
+				// res.setHeader("SpaceAvailable", this.available);
+				// res.setHeader("SpaceNeeded", Stega.calculateNeeded(buff.length) );
 
 				console.log("Input image readed");
 				console.log("Total pixels: " + this.totalPixels);
 				console.log("Available Space: " + this.available);
 				console.log("Raw lenght: " + buff.length);
 
-				this.encode(buff, pass, 'out.png');
+				this.encode(buff, pass);
+			});
+	}
+});
+
+app.post('/check', multipart, function (req, res) {
+
+	//console.log("* Debug counter: " + (debugCounter++) );
+
+	var bits = req.param.bits || req.body.bits,
+		pngIn = req.files.png,
+		inType = ( pngIn && pngIn.type ) || false ;
+
+
+	if( req.multipartError )
+		template.json( req, res, { error: MSG.MAX_FILE_SIZE }, 400 );
+
+	else
+	if(    !pngIn
+		|| inType !== 'image/png' )
+		template.json( req, res, { error: MSG.WRONG_IMG_TYPE, type: inType }, 400 );
+
+	else
+	{
+		if( bits )
+			bits = parseInt( bits );
+
+		(new Stega(pngIn.buffer, bits))
+
+			.on('error', function(code, msg) {
+				console.error("[" + code + "] Error ocurred: " + msg);
+
+				template.json( req, res, { error: msg, errorCode: code}, 400 );
+			})
+
+
+			.on('parsed', function() {
+
+				res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0');
+				res.setHeader('Pragma', 'no-cache');
+
+				template.json( req, res, { pixels: this.totalPixels, availableBytes: this.available, bits: this.bits, width: this.png.width, height: this.png.height }, 200 );
 			});
 	}
 });
@@ -103,7 +151,7 @@ app.post('/dec', function (req, res) {
 	var pass = req.body.pass;
 
 	if( !pass )
-		template.json( req, res, { error: 'Content or password not sent'}, 400 );
+		template.json( req, res, { error: MSG.CONTENT_NOT_SENT }, 400 );
 
 	else
 	{
