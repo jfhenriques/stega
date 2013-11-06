@@ -2,7 +2,9 @@
 
 var Busboy = require('busboy'),
 	fs = require('fs'),
-	stream = require('stream');
+	BufferList = require('bl'),
+	util = require('util'),
+	maxFileSize = 3 * 1024 * 1024 ;
 
 
 function onData(name, val, data)
@@ -19,65 +21,47 @@ function onData(name, val, data)
 }
 
 
-function onFile(file, filename, cb) {
+function onFile(field, file, filename, encoding, mimetype, cb)
+{
+	// or save at some other location
 
-  // or save at some other location
+	var obj = {
+			filename: filename,
+			size: 0,
+			name: field,
+			type: mimetype,
+			encoding: encoding,
+			readError: false,
+			buffer: new BufferList()
+		};
 
-  var fstream = fs.createWriteStream(filename);
+	file.on('end', function() {
 
-  file.on('end', function() {
+		// console.log( '(' + filename + ') EOF');
+		cb( obj );
+	});
 
-    console.log( '(' + filename + ') EOF');
-  });
-  file.on('data', function() {
+	file.on('data', function(data) {
 
-    console.log( '(' + filename + ') ~~~~~~');
-  });
+		//console.log( '(' + filename + ') data: ' + obj.size );
+		obj.size += data.length;
+	});
 
-  fstream.on('close', function() {
-    console.log( '(' + filename + ') written to disk');
-    cb();
-  });
+	file.on('limit', function() {
 
+		// console.log( '(' + filename + ') LIMIT');
+		obj.readError = true;
+	});
 
-  console.log( '(' + filename + ') start saving');
-  file.pipe(fstream);
-
-	// var pStream = stream.PassThrough();
-
-
-	// file.on('data', function(data) {
-
-	// 	console.log('data-data');
-	// });
-
-	// file.on('end', function() {
-	// 	console.log('--data-end');
-
-
-	// 	cb(pStream);
-	// });
-
-	// file.on('close', function() {
-	// 	console.log("what ?");
-	// });
-
-	// 	pStream.on('close', function() {
-	// 	console.log("what ?");
-	// });
-	// fstream.on('close', function() {
-	//   console.log(fieldname + '(' + filename + ') written to disk');
-	//   next();
-	// });
-
-	//file.pipe(pStream);
+	file.pipe(obj.buffer);
 }
 
 
 module.exports = function(req, res, next)
 {
+ 	//var ts = (new Date()).getTime();
 
-	var busboy = new Busboy({ headers: req.headers });
+	var busboy = new Busboy({ headers: req.headers, limits: {fileSize: maxFileSize} });
 		fields = {},
 		files = {},
 		outFiles = 0,
@@ -90,13 +74,12 @@ module.exports = function(req, res, next)
 
 	function _maybeEnd()
 	{
-		console.log('Maybe end? ');
-
 		if(done && outFiles === inFiles)
 		{
-			console.log('* ended!!');
 			req.body = fields;
 			req.files = files;
+
+			//console.log("Took: " + (((new Date()).getTime())-ts));
 
 			next();
 		}
@@ -113,44 +96,35 @@ module.exports = function(req, res, next)
 	busboy.on('end', function() {
 
 		done = true;
-
-		console.log("-----boy-end------");
-
 		_maybeEnd();
 	});
 
 	busboy.on('file', function(fieldname, file, filename, encoding, mimetype) {
 
-		console.log("boy-file-"+fieldname+"-"+filename);
+		// console.log('name: ' + fieldname + ", file: " + filename);
 
-		// if( !fieldname )
-		// 	file.end();
+		outFiles++;
 
-		// else
-		// {
-			outFiles++;
-			console.log(outFiles + "/" + inFiles + "+");
+		onFile(fieldname, file, filename, encoding, mimetype, function(obj) {
 
-			onFile(file, filename, function(s) {
+			inFiles++;
 
-				// 
+			// console.log('name: ' + fieldname + ", file: " + filename + " -- done ");
+			
+			if( obj )
+			{
+				if( !obj.readError )
+					onData(fieldname, obj, files);
 
-				inFiles++;
+				else
+				if( obj.buffer )
+					obj.buffer.end();
+			}
 
-				console.log(outFiles + "/" + inFiles + "-");
+			_maybeEnd();
+		});
 
-				// s.filename = filename;
-				// s.contentType = mimetype;
-				// s.encoding = encoding;
-
-				// onData(fieldname, s, files);
-
-				_maybeEnd();
-			});
-		// }
 	});
-
-
 
 	
 	try {
@@ -158,58 +132,9 @@ module.exports = function(req, res, next)
 
 	} catch(error) {
 		req.multipartError = error;
-		console.log("error: " + error);
+		console.log("Error: " + error);
 
 		next();
 	}
 
 }
-
-
-
-
-
-
-
-
-
-
-// function onFile(fieldname, file, filename, next) {
-//   // or save at some other location
-//   var fstream = fs.createWriteStream(filename);
-//   file.on('end', function() {
-//     console.log(fieldname + '(' + filename + ') EOF');
-//   });
-//   fstream.on('close', function() {
-//     console.log(fieldname + '(' + filename + ') written to disk');
-//     next();
-//   });
-//   console.log(fieldname + '(' + filename + ') start saving');
-//   file.pipe(fstream);
-// }
-
-
-// module.exports = function(req, res, next)
-// {
-// 	 var infiles = 0, outfiles = 0, done = false,
-//         busboy = new Busboy({ headers: req.headers });
-//     console.log('Start parsing form ...');
-//     busboy.on('file', function(fieldname, file, filename, encoding, mimetype) {
-//       ++infiles;
-//       onFile(fieldname, file, filename, function() {
-//         ++outfiles;
-//         if (done)
-//           console.log(outfiles + '/' + infiles + ' parts written to disk');
-//         if (done && infiles === outfiles) {
-//           // ACTUAL EXIT CONDITION
-//           console.log('All parts written to disk');
-//           res.writeHead(200, { 'Connection': 'close' });
-//           res.end("That's all folks!");
-//         }
-//       });
-//     });
-//     busboy.on('end', function() {
-//       console.log('Done parsing form!');
-//       done = true;
-//     });
-//     req.pipe(busboy);

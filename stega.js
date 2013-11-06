@@ -4,7 +4,8 @@ var express = require('express'),
 	app = express(),
 	Stega = require('./StegaCrypt'),
 	template = require('./template'),
-	multipart = require('./multipartStream'),
+	multipart = require('./multipartStream.off1'),
+	//multipart = require('./multipartStream'),
 	port = 8080;	// Porta por defeito
 
 app.configure(function() {
@@ -55,7 +56,7 @@ app.post('/enc', multipart, function (req, res) {
 		pass = req.param.pass || req.body.pass,
 		bits = req.param.bits || req.body.bits,
 		json = parseInt( req.param.json || req.body.json ),
-		pngIn = req.files.png,
+		pngIn = req.files && req.files.png,
 		inType = ( pngIn && pngIn.type ) || false ;
 
 

@@ -6,8 +6,8 @@
   "dependencies": {
     "pngjs": "~0.4.0",
     "express": "~3.4.4",
-    "multiparty": "~3.0.0",
-    "bl": "~0.5.0"
+    "bl": "~0.5.0",
+    "busboy": "git://github.com/mscdex/busboy.git"
   },
   "devDependencies": {},
   "scripts": {

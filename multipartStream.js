@@ -20,6 +20,7 @@ function onData(name, val, data)
 
 module.exports = function(req, res, next)
 {
+	//var ts = (new Date()).getTime();
 
 	req.multipartError = false;
 	req.body = {};
@@ -128,6 +129,8 @@ module.exports = function(req, res, next)
 			req.body = fields;
 			req.files = files;
 			
+			//console.log("Took: " + (((new Date()).getTime())-ts));
+
 			next();
 			
 		});
@@ -145,48 +148,3 @@ module.exports = function(req, res, next)
 	}
 
 }
-
-
-  // return function limit(req, res, next){
-  //   var received = 0
-  //     , len = req.headers['content-length']
-  //       ? parseInt(req.headers['content-length'], 10)
-  //       : null;
-
-  //   // self-awareness
-  //   if (req._limit) return next();
-  //   req._limit = true;
-
-  //   // limit by content-length
-  //   if (len && len > bytes) return next(utils.error(413));
-
-  //   // limit
-  //   if (brokenPause) {
-  //     listen();
-  //   } else {
-  //     req.on('newListener', function handler(event) {
-  //       if (event !== 'data') return;
-
-  //       req.removeListener('newListener', handler);
-  //       // Start listening at the end of the current loop
-  //       // otherwise the request will be consumed too early.
-  //       // Sideaffect is `limit` will miss the first chunk,
-  //       // but that's not a big deal.
-  //       // Unfortunately, the tests don't have large enough
-  //       // request bodies to test this.
-  //       process.nextTick(listen);
-  //     });
-  //   };
-
-  //   next();
-
-  //   function listen() {
-  //     req.on('data', function(chunk) {
-  //       received += Buffer.isBuffer(chunk)
-  //         ? chunk.length :
-  //         Buffer.byteLength(chunk);
-
-  //       if (received > bytes) req.destroy();
-  //     });
-  //   };
-  // };
