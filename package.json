@@ -7,7 +7,8 @@
     "pngjs": "~0.4.0",
     "express": "~3.4.4",
     "bl": "~0.5.0",
-    "busboy": "git://github.com/mscdex/busboy.git"
+    "busboy": "git://github.com/mscdex/busboy.git",
+    "ejs": "~0.8.4"
   },
   "devDependencies": {},
   "scripts": {

@@ -4,13 +4,15 @@ var express = require('express'),
 	app = express(),
 	Stega = require('./StegaCrypt'),
 	template = require('./template'),
-	multipart = require('./multipartStream.off1'),
-	//multipart = require('./multipartStream'),
+	//multipart = require('./multipartStream.off1'),
+	multipart = require('./multipartStream'),
 	port = 8080;	// Porta por defeito
 
 app.configure(function() {
 
-	
+	app.engine('html', require('ejs').renderFile);
+    app.use(express.static(__dirname+'/public'));
+    app.set('view engine', 'ejs');
 
 	app.use(function (req, res, next) {
 		res.setHeader('Server', 'StegaCrypt-1-0');
@@ -46,31 +48,43 @@ const MSG = {
 };
 
 
-var debugCounter = 0;
+
 /***************************************************************************************************/
+
+app.get('/enc', function (req, res) {
+
+	res.render('encode', null);
+});
+
+app.get('/dec', function (req, res) {
+
+	res.render('decode', null);
+});
+
+
+
+
+
 app.post('/enc', multipart, function (req, res) {
 
-	//console.log("* Debug counter: " + (debugCounter++) );
-
-	var cont = req.param.cont || req.body.cont,
-		pass = req.param.pass || req.body.pass,
-		bits = req.param.bits || req.body.bits,
+	var cont = req.body.cont,
+		pass = req.body.pass,
+		bits = req.body.bits,
 		json = parseInt( req.param.json || req.body.json ),
 		pngIn = req.files && req.files.png,
 		inType = ( pngIn && pngIn.type ) || false ;
 
+	if(    !cont
+		|| !pass
+		|| !pngIn )
+		template.json( req, res, { error: MSG.CONTENT_NOT_SENT }, 400 );
 
+	else
 	if( req.multipartError )
 		template.json( req, res, { error: MSG.MAX_FILE_SIZE }, 400 );
 
 	else
-	if(    !cont
-		|| !pass )
-		template.json( req, res, { error: MSG.CONTENT_NOT_SENT }, 400 );
-
-	else
-	if(    !pngIn
-		|| inType !== 'image/png' )
+	if( inType !== 'image/png' )
 		template.json( req, res, { error: MSG.WRONG_IMG_TYPE, type: inType }, 400 );
 
 	else
@@ -103,13 +117,13 @@ app.post('/enc', multipart, function (req, res) {
 				res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0');
 				res.setHeader('Pragma', 'no-cache');
 
-				// res.setHeader("SpaceAvailable", this.available);
-				// res.setHeader("SpaceNeeded", Stega.calculateNeeded(buff.length) );
+				res.setHeader("SpaceAvailable", this.available);
+				res.setHeader("SpaceNeeded", Stega.calculateNeeded(buff.length) );
 
-				console.log("Input image readed");
-				console.log("Total pixels: " + this.totalPixels);
-				console.log("Available Space: " + this.available);
-				console.log("Raw lenght: " + buff.length);
+				// console.log("Input image readed");
+				// console.log("Total pixels: " + this.totalPixels);
+				// console.log("Available Space: " + this.available);
+				// console.log("Raw lenght: " + buff.length);
 
 				this.encode(buff, pass);
 			});
@@ -118,20 +132,17 @@ app.post('/enc', multipart, function (req, res) {
 
 app.post('/check', multipart, function (req, res) {
 
-	//console.log("* Debug counter: " + (debugCounter++) );
-
 	var bits = req.param.bits || req.body.bits,
 		pngIn = req.files.png,
 		inType = ( pngIn && pngIn.type ) || false ;
 
-
-	if( req.multipartError )
-		template.json( req, res, { error: MSG.MAX_FILE_SIZE }, 400 );
-
-	else
 	if(    !pngIn
 		|| inType !== 'image/png' )
 		template.json( req, res, { error: MSG.WRONG_IMG_TYPE, type: inType }, 400 );
+
+	else
+	if( req.multipartError )
+		template.json( req, res, { error: MSG.MAX_FILE_SIZE }, 400 );
 
 	else
 	{
@@ -157,19 +168,29 @@ app.post('/check', multipart, function (req, res) {
 	}
 });
 
-app.post('/dec', function (req, res) {
+app.post('/dec', multipart, function (req, res) {
 
-	console.log("* Debug counter: " + (debugCounter++) );
+	var pass = req.body.pass,
+		pngIn = req.files && req.files.png,
+		inType = ( pngIn && pngIn.type ) || false ;
 
-	var pass = req.body.pass;
 
+	if( req.multipartError )
+		template.json( req, res, { error: MSG.MAX_FILE_SIZE }, 400 );
+
+	else
+	if(    !pngIn
+		|| inType !== 'image/png' )
+		template.json( req, res, { error: MSG.WRONG_IMG_TYPE, type: inType }, 400 );
+
+	else
 	if( !pass )
 		template.json( req, res, { error: MSG.CONTENT_NOT_SENT }, 400 );
 
 	else
 	{
 
-		(new Stega('out.png'))
+		(new Stega(pngIn.buffer))
 
 			.on('error', function(code, msg) {
 				console.error("[" + code + "] Error ocurred: " + msg);
@@ -180,7 +201,6 @@ app.post('/dec', function (req, res) {
 			.on('done', function(out) {
 				
 				template.json( req, res, { dec: out.toString()}, 200 );
-				//template.png( req, res, out, 200 );
 			})
 
 
@@ -189,8 +209,7 @@ app.post('/dec', function (req, res) {
 				res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0');
 				res.setHeader('Pragma', 'no-cache');
 
-
-				this.decode(pass, 'out.png');
+				this.decode(pass);
 			});
 	}
 });
