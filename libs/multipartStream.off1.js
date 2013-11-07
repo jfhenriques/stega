@@ -101,7 +101,7 @@ module.exports = function(req, res, next)
 
 	busboy.on('file', function(fieldname, file, filename, encoding, mimetype) {
 
-		 console.log('name: ' + fieldname + ", file: " + filename);
+		// console.log('name: ' + fieldname + ", file: " + filename);
 
 		outFiles++;
 
@@ -109,7 +109,7 @@ module.exports = function(req, res, next)
 
 			inFiles++;
 
-			 console.log('name: ' + fieldname + ", file: " + filename + " -- done ");
+			// console.log('name: ' + fieldname + ", file: " + filename + " -- done ");
 			
 			if( obj )
 			{

@@ -2,17 +2,20 @@
 
 var express = require('express'),
 	app = express(),
-	Stega = require('./StegaCrypt'),
-	template = require('./template'),
-	//multipart = require('./multipartStream.off1'),
-	multipart = require('./multipartStream'),
+	Stega = require('./libs/StegaCrypt'),
+	template = require('./libs/template'),
+	lessCompile = require('./libs/LessCompiler'),
+	//multipart = require('./libs/multipartStream.off1'),
+	multipart = require('./libs/multipartStream'),
 	port = 8080;	// Porta por defeito
 
 app.configure(function() {
 
 	app.engine('html', require('ejs').renderFile);
-    app.use(express.static(__dirname+'/public'));
-    app.set('view engine', 'ejs');
+	app.set('view engine', 'ejs');
+
+    app.use('/static', express.static(__dirname + '/static'));
+    
 
 	app.use(function (req, res, next) {
 		res.setHeader('Server', 'StegaCrypt-1-0');
@@ -242,5 +245,10 @@ if (args.length > 0)
 	p = null;
 }
 
-console.log('Listening to port: ' + port)
-app.listen(port);
+lessCompile('style.less', 'styles.min.css', function() {
+
+	console.log('Listening to port: ' + port)
+	app.listen(port);
+});
+
+
