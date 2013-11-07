@@ -76,10 +76,10 @@ module.exports = function(req, res, next)
 
 	function _maybeEnd()
 	{
-		console.log("maybe: " + inFiles + "/" + outFiles );
+		//console.log("maybe: " + inFiles + "/" + outFiles );
 		if(done && outFiles === inFiles)
 		{
-			console.log("maybe: " + inFiles + "/" + outFiles );
+			//console.log("maybe: " + inFiles + "/" + outFiles );
 
 			req.body = fields;
 			req.files = files;
@@ -91,13 +91,14 @@ module.exports = function(req, res, next)
 	}
 
 	busboy.on('end', function() {
-		console.log("end: " + fieldname + "," + inFiles + "/" + outFiles );
 		done = true;
+
 		_maybeEnd();
 	});
 
 	busboy.on('field', function(fieldname, val, valTruncated, keyTruncated) {
-		console.log("field: " + fieldname + "," + inFiles + "/" + outFiles );
+		//console.log("field: " + fieldname + "," + inFiles + "/" + outFiles );
+
 		if( fieldname )
 			onData(fieldname, val, fields);
 	});
@@ -106,7 +107,6 @@ module.exports = function(req, res, next)
 
 
 	busboy.on('file', function(fieldname, file, filename, encoding, mimetype) {
-
 		// console.log('name: ' + fieldname + ", file: " + filename);
 
 		outFiles++;

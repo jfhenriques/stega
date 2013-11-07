@@ -5,8 +5,8 @@ var express = require('express'),
 	Stega = require('./libs/StegaCrypt'),
 	template = require('./libs/template'),
 	lessCompile = require('./libs/LessCompiler'),
-	//multipart = require('./libs/multipartStream.off4'),
-	multipart = require('./libs/multipartStream'),
+	multipart = require('./libs/multipartStream.off1'),
+	//multipart = require('./libs/multipartStream'),
 	port = 8080;	// Porta por defeito
 
 app.configure(function() {
@@ -50,7 +50,7 @@ app.configure(function() {
 	//app.use(express.limit('3mb'));
 
 	//app.use(express.json());
-	//app.use(express.urlencoded());
+	app.use(express.urlencoded());
 	//app.use(express.multipart({defer: true, limit: '2mb'}));
 
 	app.enable('trust proxy');

@@ -1,3 +1,4 @@
 node_modules
 *.png
 styles.min.css
+tmp
