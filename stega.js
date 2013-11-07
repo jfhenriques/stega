@@ -5,11 +5,27 @@ var express = require('express'),
 	Stega = require('./libs/StegaCrypt'),
 	template = require('./libs/template'),
 	lessCompile = require('./libs/LessCompiler'),
-	//multipart = require('./libs/multipartStream.off1'),
+	//multipart = require('./libs/multipartStream.off4'),
 	multipart = require('./libs/multipartStream'),
 	port = 8080;	// Porta por defeito
 
 app.configure(function() {
+
+	// app.use(function(req, res, next) {
+	//   var raw = '';
+	//   req.setEncoding('utf8');
+
+	//   req.on('data', function(chunk) { 
+	//     raw += chunk;
+	//   });
+
+	//   req.on('end', function() {
+	//   	console.log(req.headers);
+	// 	console.log(raw);
+	//   });
+
+	//   next();
+	// });
 
 	app.engine('html', require('ejs').renderFile);
 	app.set('view engine', 'ejs');
@@ -33,8 +49,8 @@ app.configure(function() {
 
 	//app.use(express.limit('3mb'));
 
-	app.use(express.json());
-	app.use(express.urlencoded());
+	//app.use(express.json());
+	//app.use(express.urlencoded());
 	//app.use(express.multipart({defer: true, limit: '2mb'}));
 
 	app.enable('trust proxy');

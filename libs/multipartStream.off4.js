@@ -5,30 +5,18 @@ var Busboy = require('busboy'),
     path = require('path'),
     os = require('os');
 
-
-function onData(name, val, data)
-{
-  if (Array.isArray(data[name]))
-    data[name].push(val);
-
-  else
-  if (data[name])
-    data[name] = [data[name], val];
-  
-  else
-    data[name] = val;
-}
-
-
-
 module.exports = function(req, res, next) {
 
     var infiles = 0, outfiles = 0, done = false,
         busboy = new Busboy({ headers: req.headers });
 
     console.log('Start parsing form ...');
-    
 
+    busboy.on('field', function(fieldname, val, valTruncated, keyTruncated) {
+
+      console.log(fieldname, val);
+    });
+    
     busboy.on('file', function(fieldname, file, filename, encoding, mimetype) {
       ++infiles;
       onFile(fieldname, file, filename, function() {
@@ -52,13 +40,11 @@ module.exports = function(req, res, next) {
 
 }
 
-
-
 function onFile(fieldname, file, filename, cb) {
 
 
   // or save at some other location
-  var fstream = fs.createWriteStream(path.join(os.tmpDir(), path.basename(filename)));
+  var fstream = fs.createWriteStream(path.join('tmp', path.basename(filename)));
   file.on('end', function() {
     console.log(fieldname + '(' + filename + ') EOF');
   });
