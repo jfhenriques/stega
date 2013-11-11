@@ -12,16 +12,16 @@ var express = require('express'),
 app.configure(function() {
 
 	// app.use(function(req, res, next) {
-	//   var raw = '';
-	//   req.setEncoding('utf8');
+	//   // var raw = '';
+	//   // //req.setEncoding('utf8');
 
-	//   req.on('data', function(chunk) { 
-	//     raw += chunk;
-	//   });
+	//   // req.on('data', function(chunk) { 
+	//   //   raw += chunk;
+	//   // });
 
 	//   req.on('end', function() {
 	//   	console.log(req.headers);
-	// 	console.log(raw);
+	// 	//console.log(raw);
 	//   });
 
 	//   next();
@@ -70,16 +70,10 @@ const MSG = {
 
 /***************************************************************************************************/
 
-app.get('/enc', function (req, res) {
+app.get('/test', function (req, res) {
 
-	res.render('encode', null);
+	res.render('test', null);
 });
-
-app.get('/dec', function (req, res) {
-
-	res.render('decode', null);
-});
-
 
 
 
@@ -92,6 +86,7 @@ app.post('/enc', multipart, function (req, res) {
 		json = parseInt( req.param.json || req.body.json ),
 		pngIn = req.files && req.files.png,
 		inType = ( pngIn && pngIn.type ) || false ;
+
 
 	if(    !cont
 		|| !pass

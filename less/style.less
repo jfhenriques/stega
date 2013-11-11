@@ -1,43 +1,130 @@
 
-body {
-	border: 0;
-	margin-top: 100px;
-	margin-left: 100px;
-	font-family: Tahoma;
+html {
+	overflow 					: -moz-scrollbars-vertical;
+	overflow-y 					: scroll;
+}
 
-	form {
-		background-color: #ccc;
-		max-width: 700px;
-		padding-bottom: 50px;
+body {
+	border						: 0;
+	margin 						: 0;
+
+	font-family					: Tahoma;
+}
+
+
+h1.tit {
+	margin 						: 80px 2% 20px;
+}
+
+img.auto {
+	width 						: auto;
+	height 						: auto;
+	max-width 					: 100%;
+	background-color			: #fff;
+	border 						: 1px solid #000;
+	margin 						: auto 0;
+}
+
+div {
+
+	&.container {
+
+		.section {
+			float				: left;
+			min-width 			: 500px;
+			margin 				: 10px 0;
+		}
 	}
 
-	div {
-		clear:	both;
-		padding-top : 10px;
+	&.full-2sec {
+
+		margin 					: 0;
+		border					: 0;
+
+		.section {
+			max-width			: 50%;
+			width 	 			: 50%;
+
+			border				: 0;
+		}
+	}
+
+	&.clr,
+	&.clear {
+		clear 					: both;
+	}
+
+	&.hidden {
+		display 				: none;
+	}
 
 
-		label,input,textarea {
-			float:	left;
+	&.inner-sec {
+		margin-left				: 2%;
+		margin-right			: 2%;
+
+		padding 				: 20px;
+
+		background-color		: #ccc;
+
+
+		form > div {
+			.clr;
+
+			& > label {
+				float			: left;
+			}
+
+			& > span {
+			    overflow 		: hidden;
+				display 		: block;
+				padding-right	: 20px;
+			}
 		}
 
-		label {
-			text-align:	right;
-			min-width: 100px;
-			margin-right: 20px;
-			padding-top: 5px;
+		input, textarea {
+			width 				: 100%;
+			padding 			: 4px 4px;
 		}
 
 		textarea {
-			min-height: 100px;
+			min-height 			: 100px;
 		}
-		input,textarea {
-			min-width: 540px;
-			padding: 4px 4px;
+
+		label {
+			text-align			: right;
+			min-width 			: 100px;
+			margin-right		: 20px;
+			padding-top			: 5px;
 		}
 
 		input[type=submit] {
-			margin-left: 120px;
+			margin-left 		: 120px;
+			width				: 300px;
 		}
-		
+
 	}
 }
+
+
+
+
+
+
+
+/*
+form {
+	background-color: #ccc;
+	max-width: 700px;
+	padding-bottom: 50px;
+}
+
+div {
+	clear:	both;
+	padding-top : 10px;
+
+
+
+	
+}
+*/

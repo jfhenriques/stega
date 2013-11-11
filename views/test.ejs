@@ -1,0 +1,237 @@
+<% include header %>
+
+<script type="text/javascript">
+  <!--
+    $(document).ready(function(){
+
+      var $encResponse = $("div#enc-response"),
+          $decResponse = $("div#dec-response"),
+          pendingEncodeAjax = false,
+          pendingDecodeAjax = false;
+
+
+      function printResponse(to, status, response)
+      {
+        to.empty();
+        to.append("<p><b>Status:</b> " + status + "</p>");
+
+        if( response )
+          to.append("<p><b>Response:</b> " + response + "</p>");
+      }
+
+      function progressHandlingFunction(to, e)
+      {
+        if( e.total && e.position )
+          to.html("<p><b>Sending:</b> " + ( 100 * (e.position/e.total) | 0) + " %</p>");
+      }
+
+
+      /*******************************************************************************************************************/
+
+      $("form#f-encode").submit(function(event) {
+        event.preventDefault();
+
+        if( pendingEncodeAjax )
+          return false;
+
+        pendingEncodeAjax = true;
+
+        var formData = new FormData(this),
+            url = this.action;
+
+        $.ajax({
+          url: url,
+          type: 'POST',
+          xhr: function() {
+              var myXhr = $.ajaxSettings.xhr();
+
+              if(myXhr.upload)
+                  myXhr.upload.addEventListener('progress',
+                      function(e){progressHandlingFunction($encResponse,e);}, false);
+
+              return myXhr;
+          },
+          beforeSend: function() {
+            $encResponse.empty();
+            $encResponse.removeClass("hidden");
+
+            formData.append('json', 1);
+          },
+          success: function(data, textStatus, jqXHR) {
+            $encResponse.empty();
+            $encResponse.append("<p><b>Status:</b> " + textStatus + "</p>");
+
+            if( data && data.img )
+            {
+              var link = $('<a href="click-to-download-image">Click here to download image</a>');
+              link.click(function() {
+                $(this)
+                  .attr("href", "data:application/octet-stream;base64," + data.img)
+                  .attr("download", "file-encoded.png");
+              });
+
+              $encResponse.append('<p style="text-align:center"><img src="data:image/png;base64,' + data.img + '" class="auto" /></p>');
+              $encResponse.append($('<p>').append(link));
+            }
+          },
+          error: function(jqXHR, textStatus, error) {
+            printResponse($encResponse, error, jqXHR.responseText);
+          },
+          complete: function() {
+            pendingEncodeAjax = false;
+          },
+          dataType: 'json',
+          data: formData,
+          cache: false,
+          contentType: false,
+          processData: false
+        });
+        
+        return false;
+      });
+
+      
+      /*******************************************************************************************************************/
+
+      $("form#f-decode").submit(function(event) {
+        event.preventDefault();
+
+        if( pendingDecodeAjax )
+          return false;
+
+        pendingDecodeAjax = true;
+
+        var formData = new FormData(this),
+            url = this.action;
+
+        $.ajax({
+          url: url,
+          type: 'POST',
+          xhr: function() {
+              var myXhr = $.ajaxSettings.xhr();
+
+              if(myXhr.upload)
+                  myXhr.upload.addEventListener('progress',
+                      function(e){progressHandlingFunction($encResponse,e);}, false);
+
+              return myXhr;
+          },
+          beforeSend: function() {
+            $decResponse.empty();
+            $decResponse.removeClass("hidden");
+          },
+          success: function(data, textStatus, jqXHR) {
+            printResponse($decResponse, textStatus, data && data.dec);
+          },
+          error: function(jqXHR, textStatus, error) {
+            printResponse($decResponse, error, jqXHR.responseText);
+          },
+          complete: function() {
+            pendingDecodeAjax = false;
+          },
+          dataType: 'json',
+          data: formData,
+          cache: false,
+          contentType: false,
+          processData: false
+        });
+        
+        return false;
+      });
+
+      /*******************************************************************************************************************/
+
+
+    });
+  -->
+</script>
+
+  <h1 class="tit">Encode &amp; Decode Testig Page </h1>
+
+  <div class="container full-2sec">
+
+    <!-- First Section -->
+
+      <div class="section">
+
+        <div class="inner-sec">
+
+          <h3>Encode</h3>
+
+          <form id="f-encode" action="enc" method="POST">
+            <input type="hidden" name="_charset_" />
+            <div>
+              <label for="cont">Content</label>
+              <span><textarea name="cont" id="cont" accept-charset="UTF-8"></textarea></span>
+            </div>
+
+            <div>
+              <label for="pass">Password</label>
+              <span><input type="password" name="pass" id="pass" /></span>
+            </div>
+
+            <div>
+              <label for="bits">Bits</label>
+              <span><input type="number" name="bits" id="bits" min="1" max="4" value="1" /></span>
+            </div>
+
+            <div>
+              <label for="png">PNG</label>
+              <span><input type="file" name="png" id="png" accept="image/png" /></span>
+            </div>
+
+            <div>
+              <span><input type="submit" value="Encode" /></span>
+            </div>
+
+            <div class="clr"></div>
+          </form>
+
+        </div>
+
+        <div id="enc-response" class="inner-sec hidden"></div>
+
+      </div>
+
+    <!-- End of First Section -->
+
+
+    <!-- Second Section -->
+
+      <div class="section">
+
+        <div class="inner-sec">
+
+          <h3>Decode</h3>
+
+          <form id="f-decode" method="POST" action="dec">
+
+            <div>
+              <label for="pass">Password</label>
+              <span><input type="password" name="pass" id="pass" /></span>
+            </div>
+
+            <div>
+              <label for="png">PNG</label>
+              <span><input type="file" name="png" id="png" /></span>
+            </div>
+
+            <div>
+              <span><input type="submit" value="Decode" /></span>
+            </div>
+
+            <div class="clr"></div>
+          </form>
+
+        </div>
+
+        <div id="dec-response" class="inner-sec hidden"></div>
+
+      </div>
+
+    <!-- End of Second Section -->
+
+    <div class="clr"></div>
+  </div>
+
+<% include footer %>

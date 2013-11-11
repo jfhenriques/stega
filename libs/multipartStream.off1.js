@@ -1,7 +1,7 @@
 
 
 var Busboy = require('busboy'),
-	fs = require('fs'),
+	//fs = require('fs'),
 	BufferList = require('bl'),
 	util = require('util'),
 	maxFileSize = 3 * 1024 * 1024 ;
@@ -23,7 +23,6 @@ function onData(name, val, data)
 
 function onFile(field, file, filename, encoding, mimetype, cb)
 {
-	// or save at some other location
 
 	var obj = {
 			filename: filename,
@@ -59,10 +58,6 @@ function onFile(field, file, filename, encoding, mimetype, cb)
 
 module.exports = function(req, res, next)
 {
- 	//var ts = (new Date()).getTime();
-
- 	req.pipe(fs.createWriteStream('req.out'));
-
 	var busboy = new Busboy({ headers: req.headers, limits: {fileSize: maxFileSize} });
 		fields = {},
 		files = {},
@@ -73,6 +68,7 @@ module.exports = function(req, res, next)
 	req.multipartError = false;
 	req.body = {};
 	req.files = {};
+
 
 	function _maybeEnd()
 	{
@@ -102,8 +98,6 @@ module.exports = function(req, res, next)
 		if( fieldname )
 			onData(fieldname, val, fields);
 	});
-
-
 
 
 	busboy.on('file', function(fieldname, file, filename, encoding, mimetype) {
