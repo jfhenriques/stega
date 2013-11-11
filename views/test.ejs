@@ -112,7 +112,7 @@
 
               if(myXhr.upload)
                   myXhr.upload.addEventListener('progress',
-                      function(e){progressHandlingFunction($encResponse,e);}, false);
+                      function(e){progressHandlingFunction($decResponse,e);}, false);
 
               return myXhr;
           },
