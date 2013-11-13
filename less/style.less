@@ -1,124 +1,172 @@
 
+@backColor: #fff;
+@borderColor: #333;
+@backColor2: #ddd;
+@fontColor: #000;
+@inputColor: #fff;
+@inputFontColor: #333;
+@inputBorder: #bbb;
+@buttonColor: #eee;
+@buttonColorHover: #999;
+@buttonBorderHover: #555;
+
 html {
-	overflow 					: -moz-scrollbars-vertical;
-	overflow-y 					: scroll;
+	overflow 							: -moz-scrollbars-vertical;
+	overflow-y 							: scroll;
 }
 
 body {
-	border						: 0;
+	border								: 0;
 
-	font-family					: Tahoma;
+	font-family							: Tahoma;
+
+	background-color					: @backColor;
+}
+
+* {
+	color 								: @fontColor;
 }
 
 body, img, form, input,
 label, textarea {
-	margin 						: 0;
+	margin 								: 0;
 }
 
 
 h1.tit {
-	margin 						: 80px 2% 20px;
+	margin 								: 80px 2% 20px;
+
 }
 
 img.auto {
-	width 						: auto;
-	height 						: auto;
-	max-width 					: 100%;
-	background-color			: #fff;
-	border 						: 1px solid #000;
-	margin 						: auto 0;
+	width 								: auto;
+	height 								: auto;
+	max-width 							: 100%;
+	background-color					: #fff;
+	border 								: 1px solid #000;
+	margin 								: auto 5px;
+}
+
+.border-radius(@radius) {
+	-webkit-border-radius				: @radius;
+	   -moz-border-radius				: @radius;
+	        border-radius 				: @radius;
 }
 
 div {
 
 	&.group-half-sec,
 	&.group-full-sec {
-		margin 					: 0;
-		border					: 0;
+		margin 							: 0;
+		border							: 0;
 
 		.section {
-			min-width 				: 300px;
-			margin 					: 10px 0;
+			min-width 					: 300px;
+			margin 						: 10px 0;
 
-			border					: 0;
+			border						: 0;
+
+			& > div {
+				.border-radius(10px);
+				
+				background-color		: @backColor2;
+				margin-left				: 2%;
+				margin-right			: 2%;
+
+				padding 				: 20px;
+				border 					: 1px solid @borderColor;
+			}
 		}
 	}
 
 	&.group-half-sec {
 		.section {
-			max-width			: 50%;
-			width 	 			: 50%;
+			max-width					: 50%;
+			width 	 					: 50%;
 
-			float				: left;
+			float						: left;
 		}
 	}
 
 	&.group-full-sec {
 		.section {
-			max-width			: 100%;
-			width 	 			: 100%;
+			max-width					: 100%;
+			width 	 					: 100%;
 		}
 	}
 
 
 	&.clr,
 	&.clear {
-		clear 					: both;
+		clear 							: both;
 	}
 
 	&.hidden {
-		display 				: none;
+		display 						: none;
 	}
 
 
 	&.inner-sec {
-		margin-left				: 2%;
-		margin-right			: 2%;
-
-		padding 				: 20px;
-
-		background-color		: #ccc;
 
 
 		form > div {
 			.clr;
 
-			margin-top 		: 10px;
+			margin-top 					: 10px;
 
 			& > label {
-				float			: left;
+				float					: left;
 			}
 
 			& > span {
-			    overflow 		: hidden;
-				display 		: block;
-				padding-right	: 20px;
+			    overflow 				: hidden;
+				display 				: block;
+				padding-right			: 20px;
 			}
 		}
 
-		input:not([type=radio]), textarea {
-			width 				: 100%;
-			padding 			: 4px 4px;
+		input:not([type=radio]),
+		textarea {
+			width 						: 100%;
+			padding 					: 4px 8px;
+			.border-radius(5px);
+			border 						: 1px solid @inputBorder;
+			background-color			: @inputColor;
+			color 						: @inputFontColor;
+			min-height 					: 24px;
 		}
 		
 
 		textarea {
-			min-height 			: 100px;
+			min-height 					: 140px;
 		}
 
 		label {
-			text-align			: right;
-			min-width 			: 80px;
-			margin-right		: 20px;
+			text-align					: right;
+			min-width 					: 80px;
+			margin-right				: 20px;
 		}
 		label:not(.no-padd) {
-			padding-top			: 5px;
+			padding-top					: 5px;
 		}
 
 		div.button {
 			span {
-				margin-left 	: 100px;
-				padding-right 	: 10px;
+				margin-left 			: 100px;
+				padding-right 			: 0;
+
+				input {
+					min-height 			: 40px;
+					.border-radius(0);
+					font-weight			: bold;
+					font-size 			: 14px;
+					background-color	: @buttonColor;
+				}
+				input:hover {
+					font-weight			: bold;
+					background-color	: @buttonColorHover;
+					border 				: 1px solid @buttonBorderHover;
+				}
 			}
 		}
 
