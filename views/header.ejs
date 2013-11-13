@@ -1,9 +1,16 @@
 <!doctype HTML>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <title>StegaCrypt</title>
-  <link href="static/styles.min.css" rel="stylesheet" type="text/css">
-  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
-</head>
-<body>
+  <head>
+  	
+    <meta charset="utf-8">
+    <title>StegaCrypt</title>
+    <link href="static/styles.min.css" rel="stylesheet" type="text/css"><%
+      if( typeof jquery === "undefined" || jquery ) {
+    %>
+    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+    <% } if( scripts ) { for(var i=0; i<scripts.length; i++) {
+    %><script type="text/javascript" src="static/<%= scripts[i] %>"></script>
+    <% } }%>
+  </head>
+
+  <body>

@@ -72,9 +72,8 @@ const MSG = {
 
 app.get('/test', function (req, res) {
 
-	res.render('test', null);
+	res.render('test', {scripts: ["test.js"]});
 });
-
 
 
 
