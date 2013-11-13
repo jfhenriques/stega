@@ -5,8 +5,8 @@ var express = require('express'),
 	Stega = require('./libs/StegaCrypt'),
 	template = require('./libs/template'),
 	lessCompile = require('./libs/LessCompiler'),
-	multipart = require('./libs/multipartStream.off1'),
-	//multipart = require('./libs/multipartStream'),
+	multipart = require('./libs/multipartStream'),
+	mime = require('mime'),
 	port = 8080;	// Porta por defeito
 
 app.configure(function() {
@@ -62,8 +62,8 @@ app.configure(function() {
 const MSG = {
 	MAX_FILE_SIZE: 'Max file size may be exceeded',
 	CONTENT_NOT_SENT: 'Content or password not sent',
-	WRONG_IMG_TYPE: 'PNG not uploaded or wrong file type'
-
+	WRONG_IMG_TYPE: 'PNG not uploaded or wrong file type',
+	BAD_FILE_IN: 'Bad input file',
 };
 
 
@@ -81,6 +81,7 @@ app.get('/test', function (req, res) {
 app.post('/enc', multipart, function (req, res) {
 
 	var cont = req.body.cont,
+		file = req.files.file,
 		pass = req.body.pass,
 		bits = req.body.bits,
 		json = parseInt( req.param.json || req.body.json ),
@@ -88,7 +89,7 @@ app.post('/enc', multipart, function (req, res) {
 		inType = ( pngIn && pngIn.type ) || false ;
 
 
-	if(    !cont
+	if(    (!cont && !file)
 		|| !pass
 		|| !pngIn )
 		template.json( req, res, { error: MSG.CONTENT_NOT_SENT }, 400 );
@@ -96,6 +97,10 @@ app.post('/enc', multipart, function (req, res) {
 	else
 	if( req.multipartError )
 		template.json( req, res, { error: MSG.MAX_FILE_SIZE }, 400 );
+
+	else
+	if( file && !file.size )
+		template.json( req, res, { error: MSG.BAD_FILE_IN }, 400 );
 
 	else
 	if( inType !== 'image/png' )
@@ -126,7 +131,7 @@ app.post('/enc', multipart, function (req, res) {
 
 			.on('parsed', function() {
 
-				var buff = new Buffer(cont, 'utf-8');
+				var buff = ( file ) ? file.buffer.slice() : new Buffer(cont, 'utf-8') ;
 
 				res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0');
 				res.setHeader('Pragma', 'no-cache');
@@ -134,12 +139,12 @@ app.post('/enc', multipart, function (req, res) {
 				res.setHeader("SpaceAvailable", this.available);
 				res.setHeader("SpaceNeeded", Stega.calculateNeeded(buff.length) );
 
-				// console.log("Input image readed");
-				// console.log("Total pixels: " + this.totalPixels);
-				// console.log("Available Space: " + this.available);
-				// console.log("Raw lenght: " + buff.length);
+				console.log("Input image readed");
+				console.log("Total pixels: " + this.totalPixels);
+				console.log("Available Space: " + this.available);
+				console.log("Raw lenght: " + buff.length);
 
-				this.encode(buff, pass);
+				this.encode(buff, pass, file ? file.type : undefined, file ? file.filename : undefined );
 			});
 	}
 });
@@ -186,8 +191,8 @@ app.post('/dec', multipart, function (req, res) {
 
 	var pass = req.body.pass,
 		pngIn = req.files && req.files.png,
+		json = parseInt( req.param.json || req.body.json ),
 		inType = ( pngIn && pngIn.type ) || false ;
-
 
 	if( req.multipartError )
 		template.json( req, res, { error: MSG.MAX_FILE_SIZE }, 400 );
@@ -212,9 +217,28 @@ app.post('/dec', multipart, function (req, res) {
 				template.json( req, res, { error: msg, errorCode: code}, 400 );
 			})
 
-			.on('done', function(out) {
+			.on('done', function(out, mimeType, extension) {
+
+				mimeType = mimeType ? mimeType.toString("UTF-8") : "text/plain" ;
+				extension = extension ? extension.toString("UTF-8") : undefined ;
 				
-				template.json( req, res, { dec: out.toString()}, 200 );
+				if( json )
+				{
+					var isText = !!( mimeType === "text/plain" );
+
+					out = isText ? out.toString('UTF-8') : out.toString('base64') ;
+
+					template.json( req, res, { dec: out, mimetype: mimeType, base64: !isText, extension: extension ? extension : mime.extension(mimeType) }, 200 );
+				}
+
+				else
+				{
+					res.setHeader("Content-Type", mimeType);
+					res.setHeader("Content-Length", out.length);
+
+					res.write(out);
+				}
+
 			})
 
 

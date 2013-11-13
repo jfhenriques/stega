@@ -10,7 +10,8 @@
     "bl": "~0.5.x",
     "ejs": "~0.8.x",
     "less": "~1.5.x",
-    "busboy": "https://github.com/mscdex/busboy/tarball/master"
+    "busboy": "https://github.com/mscdex/busboy/tarball/master",
+    "mime": "~1.2.11"
   },
   "devDependencies": {},
   "scripts": {

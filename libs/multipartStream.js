@@ -1,8 +1,10 @@
 
 
-var multiparty = require('multiparty'),
+var Busboy = require('busboy'),
 	BufferList = require('bl'),
-	maxGlobalSize = 3 * 1024 * 1024;
+	util = require('util'),
+	maxFileSize = 3 * 1024 * 1024 ;
+
 
 function onData(name, val, data)
 {
@@ -18,133 +20,112 @@ function onData(name, val, data)
 }
 
 
+function onFile(field, file, filename, encoding, mimetype, cb)
+{
+
+	var obj = {
+			filename: filename,
+			size: 0,
+			name: field,
+			type: mimetype,
+			encoding: encoding,
+			readError: false,
+			buffer: new BufferList()
+		};
+
+	file.on('end', function() {
+
+		cb( obj );
+	});
+
+	file.on('data', function(data) {
+
+		obj.size += data.length;
+	});
+
+	file.on('limit', function() {
+
+		obj.readError = true;
+	});
+
+	file.pipe(obj.buffer);
+}
+
+
 module.exports = function(req, res, next)
 {
-	//var ts = (new Date()).getTime();
+	var busboy = new Busboy({
+						headers: req.headers,
+						limits: { fileSize: maxFileSize }
+					});
+		fields = {},
+		files = {},
+		outFiles = 0,
+		inFiles = 0
+		done = false;
 
 	req.multipartError = false;
 	req.body = {};
 	req.files = {};
 
-
-	var received = 0,
-		len = req.headers['content-length']
-				? parseInt(req.headers['content-length'], 10)
-				: null;
-
-
-	// limit by content-length
-	if (len && len > maxGlobalSize)
+	function _maybeEnd()
 	{
-		req.multipartError = "Entety too large";
-
-		return next();
-	}
-	else
-	{
-
-		req.on('newListener', function handler(event) {
-
-			//if (event !== 'data') return;
-
-			req.removeListener('newListener', handler);
-			// Start listening at the end of the current loop
-			// otherwise the request will be consumed too early.
-			// Sideaffect is `limit` will miss the first chunk,
-			// but that's not a big deal.
-			// Unfortunately, the tests don't have large enough
-			// request bodies to test this.
-			process.nextTick(function() {
-
-				req.on('data', function(chunk) {
-					received += Buffer.isBuffer(chunk)
-									? chunk.length
-									: Buffer.byteLength(chunk);
-
-					if (received > maxGlobalSize) req.destroy();
-				});
-			});
-		});
-
-
-
-
-
-		var form = new multiparty.Form(),
-			fields = {},
-			files = {};
-
-		form.on('error', function(err) {
-
-			req.multipartError = err || true;
-
-			next();
-		});
-
-		// form.on('progress', function(bytesReceived, bytesExpected) {
-			
-		// 	console.log("R: " + bytesReceived + ", E: " + bytesExpected);
-
-		// 	if( bytesExpected > maxFileSize || bytesReceived > maxFileSize )
-		// 	{
-		// 		req.multipartError = "Entety too large";
-
-		// 		res.write(req.multipartError);
-		// 		res.end();
-
-		// 		req.destroy();
-		// 	}	
-		// });
-
-		form.on('field', function(name, value) {
-
-			if( name )
-				onData(name, value, fields);
-
-		});
-
-		form.on('part', function(part) {
-
-			if( !part.filename )
-				return;
-
-			var obj = {
-					filename: part.filename,
-					size: part.byteCount,
-					name: part.name,
-					type: part.headers && part.headers['content-type'],
-					buffer: new BufferList()
-
-				};
-
-			part.pipe(obj.buffer);
-
-			if(part.name)
-				onData(part.name, obj, files);
-		});
-
-
-		form.on('close', function() {
-
+		if(done && outFiles === inFiles)
+		{
 			req.body = fields;
 			req.files = files;
-			
-			//console.log("Took: " + (((new Date()).getTime())-ts));
 
 			next();
+		}
+	}
+
+	busboy.on('end', function() {
+
+		done = true;
+
+		_maybeEnd();
+	});
+
+	busboy.on('field', function(fieldname, val, valTruncated, keyTruncated) {
+
+		if( fieldname )
+			onData(fieldname, val, fields);
+	});
+
+
+	busboy.on('file', function(fieldname, file, filename, encoding, mimetype) {
+
+		outFiles++;
+
+		onFile(fieldname, file, filename, encoding, mimetype, function(obj) {
+
+			inFiles++;
 			
+			if( obj )
+			{
+				if( !obj.readError )
+					onData(fieldname, obj, files);
+
+				else
+				if( obj.buffer )
+					obj.buffer.end();
+			}
+
+			_maybeEnd();
 		});
 
+	});
+
+	
+	try {
+		req.pipe(busboy);
+
+	} catch(error) {
 		
-		try {
-			form.parse(req);
+		req.multipartError = error;
+		console.log("Error: " + error);
 
-		} catch(error) {
-			req.multipartError = error;
-			console.log("error: " + error);
-
-			return next();
-		}
+		next();
 	}
 
 }

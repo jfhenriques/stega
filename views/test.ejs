@@ -7,8 +7,49 @@
       var $encResponse = $("div#enc-response"),
           $decResponse = $("div#dec-response"),
           pendingEncodeAjax = false,
-          pendingDecodeAjax = false;
+          pendingDecodeAjax = false,
 
+          contentIsFile = false,
+
+          toggleCont = $("div#toggle_cont:first"),
+          toggleFile = $("div#toggle_file:first"),
+
+          contCont = $("textarea#cont:first"),
+          contFile = $("input#file:first");
+
+
+      function setContType(val)
+      {
+        if( val == "0" )
+        {
+          contentIsFile = false;
+
+          toggleCont.show();
+          toggleFile.hide();
+
+          contCont.prop('disabled', false);
+          contFile.prop('disabled', true);
+
+        }
+        else
+        if( val == "1" )
+        {
+          contentIsFile = true;
+
+          toggleCont.hide();
+          toggleFile.show();
+
+          contCont.prop('disabled', true);
+          contFile.prop('disabled', false);
+        }
+      }
+
+      setContType("0");
+
+
+      $("form#f-encode input[type=radio]").click(function(){
+        setContType($(this).val());
+      });
 
       function printResponse(to, status, response)
       {
@@ -16,7 +57,7 @@
         to.append("<p><b>Status:</b> " + status + "</p>");
 
         if( response )
-          to.append("<p><b>Response:</b> " + response + "</p>");
+          to.append($("<p><b>Response:</b> </p>").append(response));
       }
 
       function progressHandlingFunction(to, e)
@@ -119,9 +160,29 @@
           beforeSend: function() {
             $decResponse.empty();
             $decResponse.removeClass("hidden");
+
+            formData.append('json', 1);
           },
           success: function(data, textStatus, jqXHR) {
-            printResponse($decResponse, textStatus, data && data.dec);
+            if( data && data.base64 )
+            {
+              var filename = "file-decoded",
+                  link = $('<a href="click-to-download-image">Click here to download decoded content</a>');
+
+              if( data.extension )
+                filename += "." + data.extension ;
+
+              link.click(function() {
+                $(this)
+                  .attr("href", "data:application/octet-stream;base64," + data.dec)
+                  .attr("download", filename);
+              });
+
+              printResponse($decResponse, textStatus, link);
+              $decResponse.append("<p><b>Mimetype:</b>: " + data.mimetype + " </p>");
+            }
+            else
+              printResponse($decResponse, textStatus, data && data.dec);
           },
           error: function(jqXHR, textStatus, error) {
             printResponse($decResponse, error, jqXHR.responseText);
@@ -159,25 +220,39 @@
           <h3>Encode</h3>
 
           <form id="f-encode" action="enc" method="POST">
-            <input type="hidden" name="_charset_" />
+
             <div>
+              <label>Type</label>
+              <span>
+                <input type="radio" name="type" value="0" checked /> Content
+                <input type="radio" name="type" value="1" /> File
+              </span>
+              <br>
+            </div>
+
+            <div id="toggle_cont">
               <label for="cont">Content</label>
               <span><textarea name="cont" id="cont" accept-charset="UTF-8"></textarea></span>
             </div>
 
+            <div id="toggle_file">
+              <label for="file">File</label>
+              <span><input type="file" name="file" id="file" /></span>
+            </div>
+
             <div>
-              <label for="pass">Password</label>
-              <span><input type="password" name="pass" id="pass" /></span>
+              <label for="pass_e">Password</label>
+              <span><input type="password" name="pass" id="pass_e" /></span>
             </div>
 
             <div>
               <label for="bits">Bits</label>
-              <span><input type="number" name="bits" id="bits" min="1" max="4" value="1" /></span>
+              <span><input type="number" name="bits" id="bits" min="1" max="8" value="1" /></span>
             </div>
 
             <div>
-              <label for="png">PNG</label>
-              <span><input type="file" name="png" id="png" accept="image/png" /></span>
+              <label for="png_e">PNG</label>
+              <span><input type="file" name="png" id="png_e" accept="image/png" /></span>
             </div>
 
             <div>
@@ -207,13 +282,13 @@
           <form id="f-decode" method="POST" action="dec">
 
             <div>
-              <label for="pass">Password</label>
-              <span><input type="password" name="pass" id="pass" /></span>
+              <label for="pass_d">Password</label>
+              <span><input type="password" name="pass" id="pass_d" /></span>
             </div>
 
             <div>
-              <label for="png">PNG</label>
-              <span><input type="file" name="png" id="png" /></span>
+              <label for="png_d">PNG</label>
+              <span><input type="file" name="png" id="png_d" accept="image/png" /></span>
             </div>
 
             <div>
