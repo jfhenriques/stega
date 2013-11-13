@@ -6,9 +6,12 @@ html {
 
 body {
 	border						: 0;
-	margin 						: 0;
 
 	font-family					: Tahoma;
+}
+
+* {
+	margin 						: 0;
 }
 
 
@@ -27,27 +30,35 @@ img.auto {
 
 div {
 
-	&.container {
-
-		.section {
-			float				: left;
-			min-width 			: 500px;
-			margin 				: 10px 0;
-		}
-	}
-
-	&.full-2sec {
-
+	&.group-half-sec,
+	&.group-full-sec {
 		margin 					: 0;
 		border					: 0;
 
 		.section {
+			min-width 				: 300px;
+			margin 					: 10px 0;
+
+			border					: 0;
+		}
+	}
+
+	&.group-half-sec {
+		.section {
 			max-width			: 50%;
 			width 	 			: 50%;
 
-			border				: 0;
+			float				: left;
 		}
 	}
+
+	&.group-full-sec {
+		.section {
+			max-width			: 100%;
+			width 	 			: 100%;
+		}
+	}
+
 
 	&.clr,
 	&.clear {
@@ -70,6 +81,8 @@ div {
 
 		form > div {
 			.clr;
+
+			margin-bottom 		: 10px;
 
 			& > label {
 				float			: left;
@@ -99,9 +112,11 @@ div {
 			padding-top			: 5px;
 		}
 
-		input[type=submit] {
-			margin-left 		: 120px;
-			width				: 300px;
+		div.button {
+			span {
+				margin-left 	: 120px;
+				padding-right 	: 10px;
+			}
 		}
 
 	}

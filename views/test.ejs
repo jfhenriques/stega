@@ -11,11 +11,18 @@
 
           contentIsFile = false,
 
+          fullSection = true,
+
           toggleCont = $("div#toggle_cont:first"),
           toggleFile = $("div#toggle_file:first"),
 
           contCont = $("textarea#cont:first"),
           contFile = $("input#file:first");
+
+      const halfSecName = 'group-half-sec',
+            fullSecName = 'group-full-sec',
+
+            secDelimeter = 1000;
 
 
       function setContType(val)
@@ -44,7 +51,33 @@
         }
       }
 
-      setContType("0");
+      var checkSetSectionType = function()
+      {
+        var w = $(window).width();
+
+        if( fullSection )
+        {
+          if( w >= secDelimeter )
+          {
+            $('.' + fullSecName)
+                  .removeClass(fullSecName)
+                  .addClass(halfSecName);
+
+            fullSection = false;
+          }
+        }
+        else
+        {
+          if( w < secDelimeter )
+          {
+            $('.' + halfSecName)
+                  .removeClass(halfSecName)
+                  .addClass(fullSecName);
+            
+            fullSection = true;
+          }
+        }
+      }
 
 
       $("form#f-encode input[type=radio]").click(function(){
@@ -202,6 +235,11 @@
 
       /*******************************************************************************************************************/
 
+      checkSetSectionType();
+      setContType("0");
+
+      $(window).resize(checkSetSectionType);
+
 
     });
   -->
@@ -209,7 +247,7 @@
 
   <h1 class="tit">Encode &amp; Decode Testig Page </h1>
 
-  <div class="container full-2sec">
+  <div class="group-full-sec">
 
     <!-- First Section -->
 
@@ -255,7 +293,7 @@
               <span><input type="file" name="png" id="png_e" accept="image/png" /></span>
             </div>
 
-            <div>
+            <div class="button">
               <span><input type="submit" value="Encode" /></span>
             </div>
 
@@ -291,7 +329,7 @@
               <span><input type="file" name="png" id="png_d" accept="image/png" /></span>
             </div>
 
-            <div>
+            <div class="button">
               <span><input type="submit" value="Decode" /></span>
             </div>
 
