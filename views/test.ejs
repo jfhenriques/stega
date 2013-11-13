@@ -15,12 +15,11 @@
             <form id="f-encode" action="enc" method="POST">
 
               <div>
-                <label>Type</label>
+                <label class="no-padd">Type</label>
                 <span>
-                  <input type="radio" name="type" value="0" checked /> Content
-                  <input type="radio" name="type" value="1" /> File
+                  <input type="radio" name="type" id="type_radio_0" value="0" checked /> <label class="no-padd" for="type_radio_0">Content</label>
+                  <input type="radio" name="type" id="type_radio_1" value="1" /> <label class="no-padd" for="type_radio_1">File</label>
                 </span>
-                <br>
               </div>
 
               <div id="toggle_cont">
