@@ -1,6 +1,6 @@
 
 @backColor: #fff;
-@borderColor: #333;
+@borderColor: #999;
 @backColor2: #ddd;
 @fontColor: #000;
 @inputColor: #fff;
@@ -53,6 +53,12 @@ img.auto {
 	        border-radius 				: @radius;
 }
 
+.box-shadow(@a) {
+	-webkit-box-shadow					: @a;
+	   -moz-box-shadow					: @a;
+	        box-shadow 					: @a;
+}
+
 div {
 
 	&.group-half-sec,
@@ -67,7 +73,8 @@ div {
 			border						: 0;
 
 			& > div {
-				.border-radius(10px);
+				.border-radius(6px);
+				.box-shadow(4px 6px 6px #777);
 				
 				background-color		: @backColor2;
 				margin-left				: 2%;
