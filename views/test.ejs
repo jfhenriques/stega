@@ -179,7 +179,7 @@
               });
 
               printResponse($decResponse, textStatus, link);
-              $decResponse.append("<p><b>Mimetype:</b>: " + data.mimetype + " </p>");
+              $decResponse.append("<p><b>Mimetype:</b> " + data.mimetype + " </p>");
             }
             else
               printResponse($decResponse, textStatus, data && data.dec);
@@ -232,7 +232,7 @@
 
             <div id="toggle_cont">
               <label for="cont">Content</label>
-              <span><textarea name="cont" id="cont" accept-charset="UTF-8"></textarea></span>
+              <span><textarea name="cont" id="cont"></textarea></span>
             </div>
 
             <div id="toggle_file">
