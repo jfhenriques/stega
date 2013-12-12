@@ -4,6 +4,8 @@
 
     var $encResponse = $("div#enc-response"),
         $decResponse = $("div#dec-response"),
+		encodeID=0,
+		encodeSelected=0,
         pendingEncodeAjax = false,
         pendingDecodeAjax = false,
 
@@ -23,6 +25,7 @@
           secDelimeter = 1000;
 
 
+	
     function setContType(val)
     {
       if( val == "0" )
@@ -77,7 +80,16 @@
       }
     }
 
-
+	$("#encode-left").click(function(){
+		$("div.enc-response").hide();
+		if (encodeSelected>0) encodeSelected--;
+		$("div.enc-response[data-id='"+encodeSelected+"']").show();
+	});
+	$("#encode-right").click(function(){
+		$("div.enc-response").hide();
+		if (encodeSelected<encodeID-1) encodeSelected++;
+		$("div.enc-response[data-id='"+encodeSelected+"']").show();
+	});
     $("form#f-encode input[type=radio]").click(function(){
       setContType($(this).val());
     });
@@ -105,7 +117,14 @@
 
       if( pendingEncodeAjax )
         return false;
-
+		
+      $encResponse=$('<div class="enc-response" data-id="'+encodeID+'"></div>');
+	  $("div#enc-response").append($encResponse);
+	  $("div.enc-response").hide();
+	  $encResponse.show();
+	  $("div#enc-response").show();
+	  encodeSelected=encodeID;
+	  encodeID++;
       pendingEncodeAjax = true;
 
       var formData = new FormData(this),
@@ -124,8 +143,8 @@
             return myXhr;
         },
         beforeSend: function() {
-          $encResponse.empty();
-          $encResponse.removeClass("hidden");
+          //$encResponse.empty();
+          //$encResponse.removeClass("hidden");
 
           formData.append('json', 1);
         },
@@ -151,6 +170,7 @@
         },
         complete: function() {
           pendingEncodeAjax = false;
+		  
         },
         dataType: 'json',
         data: formData,
